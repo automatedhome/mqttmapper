@@ -37,11 +37,11 @@ var pipesList = []Pipe{
 	},
 	Pipe{
 		In:  "evok/temp/287CECBF060000DA/value",
-		Out: "outside/temperature",
+		Out: "climate/temperature/outside",
 	},
 	Pipe{
 		In:  "evok/temp/28FF89DB06000034/value",
-		Out: "inside/temperature",
+		Out: "climate/temperature/inside",
 	},
 }
 
