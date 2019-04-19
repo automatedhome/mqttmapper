@@ -9,48 +9,31 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-type Pipe struct {
-	In  string
-	Out string
-}
-
-var pipesList = []Pipe{
-	Pipe{
-		In:  "evok/temp/28FF0A9171150270/value",
-		Out: "solar/temperature/in",
-	},
-	Pipe{
-		In:  "evok/temp/28FF1A181515019F/value",
-		Out: "solar/temperature/out",
-	},
-	Pipe{
-		In:  "evok/temp/28FF4C30041503A7/value",
-		Out: "tank/temperature/up",
-	},
-	Pipe{
-		In:  "evok/temp/28FF4D15151501C6/value",
-		Out: "heater/temperature/in",
-	},
-	Pipe{
-		In:  "evok/temp/28FF5AF502150270/value",
-		Out: "heater/temperature/out",
-	},
-	Pipe{
-		In:  "evok/temp/287CECBF060000DA/value",
-		Out: "climate/temperature/outside",
-	},
-	Pipe{
-		In:  "evok/temp/28FF89DB06000034/value",
-		Out: "climate/temperature/inside",
-	},
-}
+var topicsMap map[string]string
 
 func onMessage(client mqtt.Client, message mqtt.Message) {
-	for _, pipe := range pipesList {
-		if pipe.In == message.Topic() {
-			client.Publish(pipe.Out, 0, false, message.Payload())
+	for in, out := range topicsMap {
+		if in == message.Topic() {
+			client.Publish(out, 0, false, message.Payload())
 			return
 		}
+	}
+}
+
+func init() {
+	topicsMap = map[string]string{
+		"evok/temp/28FF0A9171150270/value": "solar/temperature/in",
+		"evok/temp/28FF1A181515019F/value": "solar/temperature/out",
+		"evok/temp/28FF4C30041503A7/value": "tank/temperature/up",
+		"evok/temp/28FF4D15151501C6/value": "heater/temperature/in",
+		"evok/temp/28FF5AF502150270/value": "heater/temperature/out",
+		"evok/temp/287CECBF060000DA/value": "climate/temperature/outside",
+		"evok/temp/28FF89DB06000034/value": "climate/temperature/inside",
+		// "solar/actuators/flow": "evok/ao/1/set",
+		// "solar/actuators/pump": "evok/relay/3/set",
+		// "solar/actuators/switch": "evok/relay/2/set",
+		// "heater/actuators/burner": "evok/relay/5/set",
+		// "heater/actuators/switch": "evok/relay/1/set"
 	}
 }
 
@@ -62,8 +45,8 @@ func main() {
 	brokerURL, _ := url.Parse(*broker)
 	var topics []string
 
-	for _, pipe := range pipesList {
-		topics = append(topics, pipe.In)
+	for key := range topicsMap {
+		topics = append(topics, key)
 	}
 
 	mqttclient.New(*clientID, brokerURL, topics, onMessage)

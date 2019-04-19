@@ -1,12 +1,12 @@
 FROM arm32v7/golang:stretch
 
 COPY qemu-arm-static /usr/bin/
-WORKDIR /go/src/github.com/automatedhome/onewire
+WORKDIR /go/src/github.com/automatedhome/mqttmapper
 COPY . .
-RUN go build -o onewire cmd/main.go
+RUN go build -o mqttmapper cmd/main.go
 
 FROM arm32v7/busybox:1.30-glibc
 
-COPY --from=0 /go/src/github.com/automatedhome/onewire/onewire /usr/bin/onewire
+COPY --from=0 /go/src/github.com/automatedhome/mqttmapper/mqttmapper /usr/bin/mqttmapper
 
-ENTRYPOINT [ "/usr/bin/onewire" ]
+ENTRYPOINT [ "/usr/bin/mqttmapper" ]
