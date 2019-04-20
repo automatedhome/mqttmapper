@@ -2,51 +2,59 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"net/url"
+
+	"gopkg.in/yaml.v2"
 
 	mqttclient "github.com/automatedhome/flow-meter/pkg/mqttclient"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-var topicsMap map[string]string
-
-func onMessage(client mqtt.Client, message mqtt.Message) {
-	for in, out := range topicsMap {
-		if in == message.Topic() {
-			client.Publish(out, 0, false, message.Payload())
-			return
-		}
-	}
+type topicsMapping struct {
+	Topics []struct {
+		In       string `yaml:"in"`
+		Out      string `yaml:"out"`
+		Retained bool   `yaml:"retained,omitempty"`
+	} `yaml:"topics"`
 }
 
-func init() {
-	topicsMap = map[string]string{
-		"evok/temp/28FF0A9171150270/value": "solar/temperature/in",
-		"evok/temp/28FF1A181515019F/value": "solar/temperature/out",
-		"evok/temp/28FF4C30041503A7/value": "tank/temperature/up",
-		"evok/temp/28FF4D15151501C6/value": "heater/temperature/in",
-		"evok/temp/28FF5AF502150270/value": "heater/temperature/out",
-		"evok/temp/287CECBF060000DA/value": "climate/temperature/outside",
-		"evok/temp/28FF89DB06000034/value": "climate/temperature/inside",
-		// "solar/actuators/flow": "evok/ao/1/set",
-		// "solar/actuators/pump": "evok/relay/3/set",
-		// "solar/actuators/switch": "evok/relay/2/set",
-		// "heater/actuators/burner": "evok/relay/5/set",
-		// "heater/actuators/switch": "evok/relay/1/set"
+var mappings topicsMapping
+
+func onMessage(client mqtt.Client, message mqtt.Message) {
+	for _, entry := range mappings.Topics {
+		if entry.In == message.Topic() {
+			client.Publish(entry.Out, 0, entry.Retained, message.Payload())
+			return
+		}
 	}
 }
 
 func main() {
 	broker := flag.String("broker", "tcp://127.0.0.1:1883", "The full url of the MQTT server to connect to ex: tcp://127.0.0.1:1883")
 	clientID := flag.String("clientid", "proxy", "A clientid for the connection")
+	configFile := flag.String("config", "/config.yaml", "Path to a configuration file")
 	flag.Parse()
 
 	brokerURL, _ := url.Parse(*broker)
-	var topics []string
 
-	for key := range topicsMap {
-		topics = append(topics, key)
+	log.Printf("Reading file from %s", *configFile)
+	data, err := ioutil.ReadFile(*configFile)
+	if err != nil {
+		log.Fatalf("File reading error: %v", err)
+		return
+	}
+
+	err = yaml.Unmarshal(data, &mappings)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+
+	var topics []string
+	for _, entry := range mappings.Topics {
+		log.Printf("subscribe: %s\n", entry.In)
+		topics = append(topics, entry.In)
 	}
 
 	mqttclient.New(*clientID, brokerURL, topics, onMessage)

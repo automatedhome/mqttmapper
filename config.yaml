@@ -1,0 +1,17 @@
+---
+topics:
+  - in: "evok/temp/28FF0A9171150270/value"
+    out: "solar/temperature/in"
+    retained: false
+  - in: "evok/temp/28FF1A181515019F/value"
+    out: "solar/temperature/out"
+  - in: "evok/temp/28FF4C30041503A7/value"
+    out: "tank/temperature/up"
+  - in: "evok/temp/28FF4D15151501C6/value"
+    out: "heater/temperature/in"
+  - in: "evok/temp/28FF5AF502150270/value"
+    out: "heater/temperature/out"
+  - in: "evok/temp/287CECBF060000DA/value"
+    out: "climate/temperature/outside"
+  - in: "evok/temp/28FF89DB06000034/value"
+    out: "climate/temperature/inside"
